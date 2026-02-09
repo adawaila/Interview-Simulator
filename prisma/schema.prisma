@@ -1,0 +1,75 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Interview {
+  id              String   @id @default(uuid())
+  difficulty      String   // junior, intermediate, senior
+  type            String   // algorithms, system_design, behavioral, job_based
+  language        String   // fr, en
+  durationMinutes Int
+  startTime       DateTime @default(now())
+  endTime         DateTime?
+  status          String   @default("in_progress") // in_progress, completed, abandoned
+
+  // Job offer parsing (optional)
+  jobOfferText    String?
+  companyName     String?
+  jobTitle        String?
+  extractedSkills String?  // JSON array of skills
+
+  messages        Message[]
+  result          InterviewResult?
+  codeSubmissions CodeSubmission[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Message {
+  id          String    @id @default(uuid())
+  interviewId String
+  interview   Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  role        String    // user, assistant, system
+  content     String
+  timestamp   DateTime  @default(now())
+}
+
+model InterviewResult {
+  id                 String    @id @default(uuid())
+  interviewId        String    @unique
+  interview          Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+
+  overallScore       Int       // 0-100
+  communicationScore Int       // 0-100
+  technicalScore     Int       // 0-100
+  problemSolvingScore Int      // 0-100
+
+  strengths          String    // JSON array
+  improvements       String    // JSON array
+  nextTopics         String    // JSON array
+  timeManagement     String
+
+  generatedAt        DateTime  @default(now())
+}
+
+model CodeSubmission {
+  id          String    @id @default(uuid())
+  interviewId String
+  interview   Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+
+  code        String
+  language    String    // python, javascript, java, cpp
+  testResults String?   // JSON with test results
+  executionTime Int?    // in ms
+
+  createdAt   DateTime  @default(now())
+}
